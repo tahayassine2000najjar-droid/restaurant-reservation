@@ -1,10 +1,15 @@
 # 🍽️ Restaurant Reservation App
 
-A simple, full-stack restaurant reservation manager with full CRUD.
+A simple, full-stack restaurant reservation manager with two sides:
+
+- **Guest** — sends a reservation request with a form (no login needed).
+- **Restaurant team** (admin / reception) — logs in with **JWT** to search,
+  filter, accept or decline reservations.
+
 Beginner-friendly JavaScript, short comments, no extra frameworks.
 
 - **Frontend:** React (Vite) + plain CSS
-- **Backend:** Node.js + Express (REST API)
+- **Backend:** Node.js + Express (REST API) + JWT auth
 - **Database:** MongoDB (via **Mongoose** schema + **Zod** validation)
 - **HTTP client:** native `fetch`
 
@@ -18,22 +23,33 @@ running **MongoDB server** (`mongod`) that Compass connects to.
 ```
 restaurant-reservation/
   backend/
-    server.js                 # Express app entry point
+    server.js                 # Express app entry point (+ creates team accounts)
     db.js                     # Connects to MongoDB
+    .env.example              # Copy to .env (MONGO_URI, PORT, JWT_SECRET)
+    middleware/auth.js        # Checks the JWT on the team routes
     models/Reservation.js     # Mongoose schema (data shape)
+    models/User.js            # Team accounts (username, password, role)
     validation.js             # Zod schema (request validation)
-    routes/reservations.js    # All CRUD endpoints
+    routes/auth.js            # POST /api/auth/login
+    routes/reservations.js    # All reservation endpoints
     package.json
   frontend/
     index.html
     vite.config.js
     src/
       components/
-        ReservationForm.jsx   # Create + edit form
+        Navbar.jsx            # Home / Reservations / Team (team link = login only)
+        ReservationForm.jsx   # Guest form (create only)
         ReservationList.jsx   # Table of reservations
-        ReservationItem.jsx   # One row with Edit / Delete
+        ReservationItem.jsx   # One row with Accept / Decline
+      pages/
+        Home.jsx              # Entry screen: guest or restaurant team
+        Reservations.jsx      # GUEST page: the form + the 08:00-20:00 remark
+        Login.jsx             # TEAM page: login form
+        Team.jsx              # TEAM page: list, search, filter, accept/decline
       api.js                  # ALL API calls live here (fetch)
-      App.jsx                 # Main layout + state
+      auth.js                 # Saves the team session in localStorage
+      App.jsx                 # Holds the page + session, renders the right page
       main.jsx                # React entry point
       index.css               # All styles
     package.json
@@ -45,14 +61,21 @@ restaurant-reservation/
 ## How frontend and backend talk
 
 ```
-React (localhost:5173)  ──fetch──▶  Express API (localhost:4000/api/reservations)  ──▶  MongoDB (localhost:27017)
+React (localhost:5173)  ──fetch──▶  Express API (localhost:4000/api)  ──▶  MongoDB (localhost:27017)
 ```
 
 1. The browser loads the React app from Vite (`http://localhost:5173`).
 2. Every API call is in **one file**: `frontend/src/api.js`, using `fetch`.
-3. Those calls hit the Express server (`http://localhost:4000/api/reservations`).
-4. Express uses **Mongoose** to read/write MongoDB, and **Zod** to validate input first.
-5. After a create/update/delete, the frontend re-fetches the list so the table stays in sync.
+3. A **guest** fills the form → `POST /api/reservations` → the request is
+   saved with the status `pending`.
+4. The **team** logs in → `POST /api/auth/login` returns a JWT, saved in
+   `localStorage`. Every team request then carries
+   `Authorization: Bearer <token>`.
+5. The team page calls `GET /api/reservations?search=…&date=…` for the list,
+   and `PATCH /api/reservations/:id/status` to accept (`confirmed`) or
+   decline (`cancelled`).
+6. Express checks the token first (middleware), then uses **Mongoose** to
+   read/write MongoDB and **Zod** to validate input.
 
 CORS is enabled on the backend so the browser allows calls from `:5173` to `:4000`.
 
@@ -71,8 +94,18 @@ CORS is enabled on the backend so the browser allows calls from `:5173` to `:400
 ```powershell
 cd backend
 npm install
-npm start          # runs on http://localhost:4000
+copy .env.example .env    # then open .env and set a real JWT_SECRET
+npm start                 # runs on http://localhost:4000
 ```
+
+On the **first start**, the server creates the two team accounts:
+
+| Username    | Password        | Role  |
+|-------------|-----------------|-------|
+| `admin`     | `admin123`      | admin |
+| `reception` | `reception123`  | reception |
+
+They live in the `users` collection — change or delete them whenever you want.
 
 ### 2. Frontend (in a second terminal)
 ```powershell
@@ -109,39 +142,48 @@ Leave that window open while using the app. Compass can now connect to
 
 ## API endpoints
 
-Base URL: `http://localhost:4000/api/reservations`
+Base URL: `http://localhost:4000/api`
 
-| Method | Path                    | Description                         | Success code |
-|--------|-------------------------|-------------------------------------|--------------|
-| GET    | `/`                     | List all (optional `?date=YYYY-MM-DD`) | 200       |
-| GET    | `/:id`                  | Get one by id                       | 200          |
-| POST   | `/`                     | Create a reservation                | 201          |
-| PUT    | `/:id`                  | Update a reservation                | 200          |
-| DELETE | `/:id`                  | Delete a reservation                | 200          |
+| Method | Path                       | Who           | Description                                                 | Success |
+|--------|----------------------------|---------------|-------------------------------------------------------------|---------|
+| POST   | `/auth/login`              | anyone        | `{ username, password }` → `{ token, username, role }`      | 200     |
+| GET    | `/reservations`            | **team only** | List all, with `?date=YYYY-MM-DD` and/or `?search=name`     | 200     |
+| GET    | `/reservations/:id`        | anyone        | Get one by id                                               | 200     |
+| POST   | `/reservations`            | anyone (guest)| Create a request — status is always `pending`               | 201     |
+| PATCH  | `/reservations/:id/status` | **team only** | Accept `{"status":"confirmed"}` or decline `{"status":"cancelled"}` | 200 |
+| PUT    | `/reservations/:id`        | **team only** | Update a reservation                                        | 200     |
+| DELETE | `/reservations/:id`        | **team only** | Delete a reservation                                        | 200     |
 
-Errors return `400` (bad input) or `404` (not found) with `{ "error": "message" }`.
+**Team only** = the request must carry the login token in the header:
+`Authorization: Bearer <token>`.
+
+Errors return `400` (bad input), `401` (no/invalid token) or `404` (not found)
+with `{ "error": "message" }`.
 
 ### Example API requests (PowerShell)
 
 ```powershell
-# CREATE
+# LOGIN (team) -> keeps the token for the next calls
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/auth/login `
+  -ContentType "application/json" `
+  -Body '{"username":"admin","password":"admin123"}'
+$h = @{ Authorization = "Bearer $($login.token)" }
+
+# GUEST: create a request (no token needed, no status in the body)
 Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/reservations `
   -ContentType "application/json" `
-  -Body '{"customerName":"Jane Doe","phone":"+1 555 123 4567","email":"jane@example.com","date":"2026-12-01","time":"19:00","guests":4,"notes":"Birthday","status":"pending"}'
+  -Body '{"customerName":"Jane Doe","phone":"+1 555 123 4567","email":"jane@example.com","date":"2026-12-01","time":"19:00","guests":4,"notes":"Birthday"}'
 
-# READ all
-Invoke-RestMethod -Uri http://localhost:4000/api/reservations
+# TEAM: list, with search + filter combined
+Invoke-RestMethod -Uri "http://localhost:4000/api/reservations?date=2026-12-01&search=jane" -Headers $h
 
-# READ one by date
-Invoke-RestMethod -Uri "http://localhost:4000/api/reservations?date=2026-12-01"
+# TEAM: accept  (replace <id> with a real id)
+Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>/status `
+  -Headers $h -ContentType "application/json" -Body '{"status":"confirmed"}'
 
-# UPDATE (replace 1 with a real id)
-Invoke-RestMethod -Method Put -Uri http://localhost:4000/api/reservations/1 `
-  -ContentType "application/json" `
-  -Body '{"customerName":"Jane Doe","phone":"+1 555 123 4567","date":"2026-12-01","time":"20:00","guests":2,"status":"confirmed"}'
-
-# DELETE (replace 1 with a real id)
-Invoke-RestMethod -Method Delete -Uri http://localhost:4000/api/reservations/1
+# TEAM: decline
+Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>/status `
+  -Headers $h -ContentType "application/json" -Body '{"status":"cancelled"}'
 ```
 
 ---
@@ -155,10 +197,10 @@ Invoke-RestMethod -Method Delete -Uri http://localhost:4000/api/reservations/1
 | phone         | required, 7-15 digits                              |
 | email         | optional, valid format if provided                 |
 | date          | required, `YYYY-MM-DD`, not in the past            |
-| time          | required, between 12:00 and 23:00                  |
+| time          | required, between **08:00 and 20:00**              |
 | guests        | required, integer 1-20                             |
 | notes         | optional                                           |
-| status        | `pending` (default) / `confirmed` / `cancelled`    |
+| status        | `pending` (always, on creation) / `confirmed` / `cancelled` — only the team changes it |
 | createdAt     | auto-generated                                     |
 
 **Double-booking rule:** max **5** reservations per date + time slot
