@@ -36,11 +36,11 @@ const reservationSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'time must be HH:mm')
     .refine((v) => {
-      // Between 12:00 and 23:00 inclusive.
+      // Between 08:00 and 20:00 inclusive (opening hours for reservations).
       const [h, m] = v.split(':').map(Number);
       const minutes = h * 60 + m;
-      return minutes >= 12 * 60 && minutes <= 23 * 60;
-    }, 'time must be between 12:00 and 23:00'),
+      return minutes >= 8 * 60 && minutes <= 20 * 60;
+    }, 'time must be between 08:00 and 20:00'),
   guests: z.coerce
     .number()
     .int('guests must be a whole number')

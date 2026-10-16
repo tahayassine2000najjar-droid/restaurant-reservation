@@ -1,19 +1,32 @@
 // routes/reservations.js - all CRUD routes for reservations.
+// Team routes (list / edit / delete / accept-decline) need the JWT:
+//   Authorization: Bearer <token>
+// Only POST is public: that is how a guest sends a reservation request.
 
 const express = require('express');
 const Reservation = require('../models/Reservation');
 const { validateReservation } = require('../validation');
+const requireTeam = require('../middleware/auth');
 
 const router = express.Router();
 
-
+// Max reservations allowed for the same date + time slot.
 const MAX_PER_SLOT = 5;
 
+// Turn user text into a safe regular expression so characters like "(" cannot break the search.
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-router.get('/', async (req, res) => {
+// GET /api/reservations?date=YYYY-MM-DD&search=john
+// TEAM ONLY: list with the date filter and the search by customer name.
+router.get('/', requireTeam, async (req, res) => {
   try {
+    const { date, search } = req.query;
 
-    const filter = req.query.date ? { date: req.query.date } : {};
+    const filter = {};
+    if (date) filter.date = date;
+    if (search) filter.customerName = { $regex: escapeRegex(String(search)), $options: 'i' };
 
     const rows = await Reservation.find(filter).sort({ date: 1, time: 1 });
     res.json(rows);
@@ -32,14 +45,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-
+// POST /api/reservations - PUBLIC (a guest sends a request).
+// The status is always "pending": only the team can accept or decline.
 router.post('/', async (req, res) => {
   try {
-   
     const { success, data, errors } = validateReservation(req.body);
     if (!success) return res.status(400).json({ error: errors.join(', ') });
 
- 
     const count = await Reservation.countDocuments({
       date: data.date,
       time: data.time,
@@ -51,7 +63,6 @@ router.post('/', async (req, res) => {
         .json({ error: `Slot ${data.date} ${data.time} is full (max ${MAX_PER_SLOT})` });
     }
 
-  
     const created = await Reservation.create({
       customerName: data.customerName,
       phone: data.phone,
@@ -60,31 +71,51 @@ router.post('/', async (req, res) => {
       time: data.time,
       guests: data.guests,
       notes: data.notes || null,
-      status: data.status || 'pending',
+      status: 'pending', // never taken from the request body
     });
 
-    res.status(201).json(created); 
+    res.status(201).json(created);
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
+// PATCH /api/reservations/:id/status - TEAM ONLY: accept or decline.
+// body: { status: "confirmed" | "cancelled" }
+router.patch('/:id/status', requireTeam, async (req, res) => {
+  try {
+    const { status } = req.body || {};
+    if (status !== 'confirmed' && status !== 'cancelled') {
+      return res.status(400).json({ error: 'status must be "confirmed" or "cancelled"' });
+    }
 
-router.put('/:id', async (req, res) => {
+    const row = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!row) return res.status(404).json({ error: 'Reservation not found' });
+
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+// PUT /api/reservations/:id - TEAM ONLY (edit an existing reservation).
+router.put('/:id', requireTeam, async (req, res) => {
   try {
     const existing = await Reservation.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Reservation not found' });
 
-
     const { success, data, errors } = validateReservation(req.body);
     if (!success) return res.status(400).json({ error: errors.join(', ') });
 
-  
     const count = await Reservation.countDocuments({
       date: data.date,
       time: data.time,
       status: { $ne: 'cancelled' },
-      _id: { $ne: req.params.id }, 
+      _id: { $ne: req.params.id }, // ignore the row we are editing
     });
     if (count >= MAX_PER_SLOT) {
       return res
@@ -92,7 +123,6 @@ router.put('/:id', async (req, res) => {
         .json({ error: `Slot ${data.date} ${data.time} is full (max ${MAX_PER_SLOT})` });
     }
 
-  
     existing.customerName = data.customerName;
     existing.phone = data.phone;
     existing.email = data.email || null;
@@ -100,7 +130,7 @@ router.put('/:id', async (req, res) => {
     existing.time = data.time;
     existing.guests = data.guests;
     existing.notes = data.notes || null;
-    existing.status = data.status || 'pending';
+    existing.status = data.status || existing.status; // keep the current status unless given
     await existing.save();
 
     res.json(existing);
@@ -109,8 +139,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-
-router.delete('/:id', async (req, res) => {
+// DELETE /api/reservations/:id - TEAM ONLY.
+router.delete('/:id', requireTeam, async (req, res) => {
   try {
     const deleted = await Reservation.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Reservation not found' });
