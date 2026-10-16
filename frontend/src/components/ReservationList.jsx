@@ -1,11 +1,11 @@
 // ReservationList.jsx - table of reservations (one ReservationItem per row).
 import ReservationItem from './ReservationItem.jsx';
 
-export default function ReservationList({ items, loading, onEdit, onDelete }) {
+export default function ReservationList({ items, loading, onAccept, onDecline }) {
   if (loading) return <div className="alert">Loading reservations…</div>;
 
   if (items.length === 0)
-    return <div className="alert">No reservations yet. Create the first one!</div>;
+    return <div className="alert">No reservations found.</div>;
 
   return (
     <div className="table-wrap">
@@ -19,7 +19,7 @@ export default function ReservationList({ items, loading, onEdit, onDelete }) {
             <th>Guests</th>
             <th>Status</th>
             <th>Notes</th>
-            <th>Actions</th>
+            <th>Decision</th>
           </tr>
         </thead>
         <tbody>
@@ -27,8 +27,8 @@ export default function ReservationList({ items, loading, onEdit, onDelete }) {
             <ReservationItem
               key={item.id}
               item={item}
-              onEdit={onEdit}
-              onDelete={onDelete}
+              onAccept={onAccept}
+              onDecline={onDecline}
             />
           ))}
         </tbody>

@@ -1,5 +1,5 @@
-// ReservationForm.jsx - one form used for BOTH create and edit.
-import { useState, useEffect } from 'react';
+// ReservationForm.jsx - the form a guest fills to ask for a reservation.
+import { useState } from 'react';
 
 // Empty shape used when creating a new reservation.
 const EMPTY = {
@@ -10,10 +10,9 @@ const EMPTY = {
   time: '19:00',
   guests: 2,
   notes: '',
-  status: 'pending',
 };
 
-
+// Simple validation, same rules as the API.
 function validate(form) {
   if (!form.customerName.trim()) return 'Customer name is required';
   if (!form.phone.trim()) return 'Phone is required';
@@ -24,42 +23,22 @@ function validate(form) {
   if (!form.date) return 'Date is required';
   if (form.date < new Date().toISOString().slice(0, 10)) return 'Date cannot be in the past';
   const [h, m] = form.time.split(':').map(Number);
-  if (h * 60 + m < 12 * 60 || h * 60 + m > 23 * 60)
-    return 'Time must be between 12:00 and 23:00';
+  if (h * 60 + m < 8 * 60 || h * 60 + m > 20 * 60)
+    return 'Time must be between 08:00 and 20:00';
   if (form.guests < 1 || form.guests > 20) return 'Guests must be between 1 and 20';
   return null;
 }
 
-export default function ReservationForm({ onSave, editing, onCancel }) {
+export default function ReservationForm({ onSave }) {
   // Local form state.
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // When the "editing" prop changes, load that reservation into the form.
-  useEffect(() => {
-    if (editing) {
-      setForm({
-        customerName: editing.customerName,
-        phone: editing.phone,
-        email: editing.email || '',
-        date: editing.date,
-        time: editing.time,
-        guests: editing.guests,
-        notes: editing.notes || '',
-        status: editing.status,
-      });
-    } else {
-      setForm(EMPTY);
-    }
-  }, [editing]);
-
-
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   }
-
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -72,7 +51,7 @@ export default function ReservationForm({ onSave, editing, onCancel }) {
     setSaving(true);
     try {
       await onSave(form);
-      if (!editing) setForm(EMPTY);
+      setForm(EMPTY); // ready for the next request
     } catch (saveError) {
       setError(saveError.message);
     } finally {
@@ -82,7 +61,7 @@ export default function ReservationForm({ onSave, editing, onCancel }) {
 
   return (
     <form className="card form" onSubmit={handleSubmit}>
-      <h2>{editing ? `Edit reservation #${editing.id}` : 'New reservation'}</h2>
+      <h2>Ask for a reservation</h2>
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -123,8 +102,15 @@ export default function ReservationForm({ onSave, editing, onCancel }) {
         </label>
 
         <label>
-          Time *
-          <input type="time" name="time" value={form.time} onChange={handleChange} />
+          Time * (08:00 - 20:00)
+          <input
+            type="time"
+            name="time"
+            min="08:00"
+            max="20:00"
+            value={form.time}
+            onChange={handleChange}
+          />
         </label>
 
         <label>
@@ -141,15 +127,6 @@ export default function ReservationForm({ onSave, editing, onCancel }) {
       </div>
 
       <label>
-        Status
-        <select name="status" value={form.status} onChange={handleChange}>
-          <option value="pending">Pending</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </label>
-
-      <label>
         Notes (optional)
         <textarea
           name="notes"
@@ -161,13 +138,8 @@ export default function ReservationForm({ onSave, editing, onCancel }) {
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving}>
-          {saving ? 'Saving…' : editing ? 'Update reservation' : 'Create reservation'}
+          {saving ? 'Sending…' : 'Send my request'}
         </button>
-        {editing && (
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>
-            Cancel edit
-          </button>
-        )}
       </div>
     </form>
   );

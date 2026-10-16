@@ -1,5 +1,6 @@
-// Navbar.jsx - simple top navigation. No router: it just calls onNavigate.
-export default function Navbar({ page, onNavigate }) {
+// Navbar.jsx - top navigation. No router: it just calls onNavigate.
+// The "Team" link only exists for a logged-in admin or reception.
+export default function Navbar({ page, session, onNavigate, onLogout }) {
   return (
     <nav className="navbar">
       <span className="brand">La Belle Table</span>
@@ -12,6 +13,7 @@ export default function Navbar({ page, onNavigate }) {
         >
           Home
         </button>
+
         <button
           type="button"
           className={page === 'reservations' ? 'nav-link active' : 'nav-link'}
@@ -19,6 +21,32 @@ export default function Navbar({ page, onNavigate }) {
         >
           Reservations
         </button>
+
+        {session ? (
+          <>
+            <button
+              type="button"
+              className={page === 'team' ? 'nav-link active' : 'nav-link'}
+              onClick={() => onNavigate('team')}
+            >
+              Team
+            </button>
+            <span className="nav-role">
+              {session.username} · {session.role}
+            </span>
+            <button type="button" className="btn btn-ghost" onClick={onLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={page === 'login' ? 'nav-link active' : 'nav-link'}
+            onClick={() => onNavigate('login')}
+          >
+            Team login
+          </button>
+        )}
       </div>
     </nav>
   );
