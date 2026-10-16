@@ -1,0 +1,33 @@
+// routes/auth.js - login for the restaurant team (returns a JWT).
+
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const router = express.Router();
+
+// POST /api/auth/login  body: { username, password }
+router.post('/login', async (req, res) => {
+  try {
+    const { username = '', password = '' } = req.body || {};
+
+    const user = await User.findOne({ username: String(username).trim() }).select('+password');
+    // Same message for "no user" and "wrong password", so we do not leak usernames
+    if (!user || !(await bcrypt.compare(String(password), user.password))) {
+      return res.status(401).json({ error: 'Wrong username or password' });
+    }
+
+    const token = jwt.sign(
+      { username: user.username, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.json({ token, username: user.username, role: user.role });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+module.exports = router;
