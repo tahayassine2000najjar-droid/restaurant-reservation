@@ -1,4 +1,4 @@
-// ReservationItem.jsx - one table row with the Accept / Decline buttons.
+
 export default function ReservationItem({ item, onAccept, onDecline }) {
   return (
     <tr>

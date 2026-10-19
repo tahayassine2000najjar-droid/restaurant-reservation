@@ -7,13 +7,13 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// POST /api/auth/login  body: { username, password }
+
 router.post('/login', async (req, res) => {
   try {
     const { username = '', password = '' } = req.body || {};
 
     const user = await User.findOne({ username: String(username).trim() }).select('+password');
-    // Same message for "no user" and "wrong password", so we do not leak usernames
+   
     if (!user || !(await bcrypt.compare(String(password), user.password))) {
       return res.status(401).json({ error: 'Wrong username or password' });
     }

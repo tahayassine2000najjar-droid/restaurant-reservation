@@ -43,6 +43,13 @@ export async function getReservations({ date, search } = {}, token) {
   return handleResponse(res);
 }
 
+// GET /api/reservations/:id - PUBLIC: a guest uses it to follow HIS OWN
+// request (created in this browser) and see when the team accepts/declines.
+export async function getReservation(id) {
+  const res = await fetch(`${BASE}/reservations/${id}`);
+  return handleResponse(res);
+}
+
 // POST /api/reservations - PUBLIC: this is how a guest asks for a table.
 export async function createReservation(payload) {
   const res = await fetch(`${BASE}/reservations`, {

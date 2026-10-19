@@ -348,6 +348,30 @@ h2 {
   color: var(--danger);
 }
 
+/* Guest page: the requests sent from this browser, below the form */
+.my-reservations {
+  margin-top: 18px;
+}
+
+.guest-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.guest-res {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.guest-res:first-child {
+  border-top: none;
+}
+
 /* ---------------- Entry screen / guest / team pages ---------------- */
 
 /* One centered column (guest form and team login) */

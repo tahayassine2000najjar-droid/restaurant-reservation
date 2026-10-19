@@ -40,16 +40,18 @@ restaurant-reservation/
       components/
         Navbar.jsx            # Home / Reservations / Team (team link = login only)
         ReservationForm.jsx   # Guest form (create only)
+        MyReservations.jsx    # Guest list below the form: live status of the requests
         ReservationList.jsx   # Table of reservations
         ReservationItem.jsx   # One row with Accept / Decline
       pages/
         Home.jsx              # Entry screen: guest or restaurant team
-        Reservations.jsx      # GUEST page: the form + the 08:00-20:00 remark
+        Reservations.jsx      # GUEST page: the form + the requests sent from this browser
         Login.jsx             # TEAM page: login form
         Team.jsx              # TEAM page: list, search, filter, accept/decline
       api.js                  # ALL API calls live here (fetch)
       auth.js                 # Saves the team session in localStorage
       App.jsx                 # Holds the page + session, renders the right page
+                              # (admin on "Reservations" = list only, no guest form)
       main.jsx                # React entry point
       index.css               # All styles
     package.json
@@ -67,7 +69,11 @@ React (localhost:5173)  ──fetch──▶  Express API (localhost:4000/api)  
 1. The browser loads the React app from Vite (`http://localhost:5173`).
 2. Every API call is in **one file**: `frontend/src/api.js`, using `fetch`.
 3. A **guest** fills the form → `POST /api/reservations` → the request is
-   saved with the status `pending`.
+   saved with the status `pending`. The id is remembered in `localStorage`,
+   and **below the form** the guest sees "My reservations": every request
+   sent from this browser with a live badge (`pending` / `confirmed` /
+   `cancelled`), refreshed every 10 s and on tab focus via the public
+   `GET /api/reservations/:id`.
 4. The **team** logs in → `POST /api/auth/login` returns a JWT, saved in
    `localStorage`. Every team request then carries
    `Authorization: Bearer <token>`.

@@ -1,7 +1,7 @@
-// ReservationForm.jsx - the form a guest fills to ask for a reservation.
+
 import { useState } from 'react';
 
-// Empty shape used when creating a new reservation.
+
 const EMPTY = {
   customerName: '',
   phone: '',
@@ -12,7 +12,7 @@ const EMPTY = {
   notes: '',
 };
 
-// Simple validation, same rules as the API.
+
 function validate(form) {
   if (!form.customerName.trim()) return 'Customer name is required';
   if (!form.phone.trim()) return 'Phone is required';
@@ -30,7 +30,7 @@ function validate(form) {
 }
 
 export default function ReservationForm({ onSave }) {
-  // Local form state.
+
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -51,7 +51,7 @@ export default function ReservationForm({ onSave }) {
     setSaving(true);
     try {
       await onSave(form);
-      setForm(EMPTY); // ready for the next request
+      setForm(EMPTY);
     } catch (saveError) {
       setError(saveError.message);
     } finally {

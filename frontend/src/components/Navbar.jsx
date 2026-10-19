@@ -1,5 +1,4 @@
-// Navbar.jsx - top navigation. No router: it just calls onNavigate.
-// The "Team" link only exists for a logged-in admin or reception.
+
 export default function Navbar({ page, session, onNavigate, onLogout }) {
   return (
     <nav className="navbar">

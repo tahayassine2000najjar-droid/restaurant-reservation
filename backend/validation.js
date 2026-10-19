@@ -1,11 +1,10 @@
-// validation.js - Zod schema used to validate incoming request bodies.
+
 
 const { z } = require('zod');
 
-// Allow empty string "" and treat it as "not provided" for optional fields.
 const optionalText = z.string().trim().optional().or(z.literal(''));
 
-// Zod schema: validates and also transforms the data (e.g. trims strings).
+
 const reservationSchema = z.object({
   customerName: z.string().trim().min(1, 'customerName is required'),
   phone: z
@@ -16,7 +15,7 @@ const reservationSchema = z.object({
       const digits = v.replace(/\D/g, '');
       return /^[+\d\s\-()]+$/.test(v) && digits.length >= 7 && digits.length <= 15;
     }, 'phone format is invalid'),
-  // Email is optional, but must be valid if a non-empty value is provided.
+ 
   email: z
     .string()
     .trim()
@@ -36,7 +35,7 @@ const reservationSchema = z.object({
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'time must be HH:mm')
     .refine((v) => {
-      // Between 08:00 and 20:00 inclusive (opening hours for reservations).
+     
       const [h, m] = v.split(':').map(Number);
       const minutes = h * 60 + m;
       return minutes >= 8 * 60 && minutes <= 20 * 60;
@@ -50,12 +49,12 @@ const reservationSchema = z.object({
   status: z.enum(['pending', 'confirmed', 'cancelled']).optional(),
 });
 
-// Run validation and return a clean { success, data, errors } object.
+
 function validateReservation(body) {
   const result = reservationSchema.safeParse(body);
   if (result.success) return { success: true, data: result.data };
 
-  // Turn Zod's error list into one readable message (or a small array).
+
   const errors = result.error.issues.map((i) => i.message);
   return { success: false, errors };
 }

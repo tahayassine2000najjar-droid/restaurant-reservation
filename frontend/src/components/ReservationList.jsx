@@ -1,4 +1,4 @@
-// ReservationList.jsx - table of reservations (one ReservationItem per row).
+
 import ReservationItem from './ReservationItem.jsx';
 
 export default function ReservationList({ items, loading, onAccept, onDecline }) {

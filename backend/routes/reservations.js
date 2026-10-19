@@ -1,7 +1,4 @@
-// routes/reservations.js - all CRUD routes for reservations.
-// Team routes (list / edit / delete / accept-decline) need the JWT:
-//   Authorization: Bearer <token>
-// Only POST is public: that is how a guest sends a reservation request.
+
 
 const express = require('express');
 const Reservation = require('../models/Reservation');
@@ -10,16 +7,15 @@ const requireTeam = require('../middleware/auth');
 
 const router = express.Router();
 
-// Max reservations allowed for the same date + time slot.
+
 const MAX_PER_SLOT = 5;
 
-// Turn user text into a safe regular expression so characters like "(" cannot break the search.
+
 function escapeRegex(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// GET /api/reservations?date=YYYY-MM-DD&search=john
-// TEAM ONLY: list with the date filter and the search by customer name.
+
 router.get('/', requireTeam, async (req, res) => {
   try {
     const { date, search } = req.query;
@@ -45,8 +41,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/reservations - PUBLIC (a guest sends a request).
-// The status is always "pending": only the team can accept or decline.
+
 router.post('/', async (req, res) => {
   try {
     const { success, data, errors } = validateReservation(req.body);
@@ -71,7 +66,7 @@ router.post('/', async (req, res) => {
       time: data.time,
       guests: data.guests,
       notes: data.notes || null,
-      status: 'pending', // never taken from the request body
+      status: 'pending', 
     });
 
     res.status(201).json(created);
@@ -80,8 +75,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PATCH /api/reservations/:id/status - TEAM ONLY: accept or decline.
-// body: { status: "confirmed" | "cancelled" }
+
 router.patch('/:id/status', requireTeam, async (req, res) => {
   try {
     const { status } = req.body || {};
@@ -102,7 +96,7 @@ router.patch('/:id/status', requireTeam, async (req, res) => {
   }
 });
 
-// PUT /api/reservations/:id - TEAM ONLY (edit an existing reservation).
+
 router.put('/:id', requireTeam, async (req, res) => {
   try {
     const existing = await Reservation.findById(req.params.id);
@@ -115,7 +109,7 @@ router.put('/:id', requireTeam, async (req, res) => {
       date: data.date,
       time: data.time,
       status: { $ne: 'cancelled' },
-      _id: { $ne: req.params.id }, // ignore the row we are editing
+      _id: { $ne: req.params.id }, 
     });
     if (count >= MAX_PER_SLOT) {
       return res
@@ -130,7 +124,7 @@ router.put('/:id', requireTeam, async (req, res) => {
     existing.time = data.time;
     existing.guests = data.guests;
     existing.notes = data.notes || null;
-    existing.status = data.status || existing.status; // keep the current status unless given
+    existing.status = data.status || existing.status; 
     await existing.save();
 
     res.json(existing);
@@ -139,7 +133,7 @@ router.put('/:id', requireTeam, async (req, res) => {
   }
 });
 
-// DELETE /api/reservations/:id - TEAM ONLY.
+
 router.delete('/:id', requireTeam, async (req, res) => {
   try {
     const deleted = await Reservation.findByIdAndDelete(req.params.id);

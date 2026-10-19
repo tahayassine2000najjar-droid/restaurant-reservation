@@ -27,7 +27,14 @@ export default function App() {
 
   // The team page is private: without a session we show the login instead.
   function renderPage() {
-    if (page === 'reservations') return <Reservations />;
+    // An admin doesn't ask for a table: on the Reservations page he only
+    // gets the list (search, filter, accept/decline) — no guest form.
+    if (page === 'reservations') {
+      if (session && session.role === 'admin') {
+        return <Team session={session} onLogout={handleLogout} />;
+      }
+      return <Reservations />;
+    }
 
     if (page === 'team' || page === 'login') {
       if (!session) return <Login onLogin={handleLogin} />;

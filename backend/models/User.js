@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-    // select:false keeps the password out of normal queries (we add it back to login)
+   
     password: {
       type: String,
       required: [true, 'password is required'],
@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash the password automatically before saving (only when it changed)
+
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);
