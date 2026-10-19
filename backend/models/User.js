@@ -1,4 +1,4 @@
-// models/User.js - a member of the restaurant team (admin or reception).
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 

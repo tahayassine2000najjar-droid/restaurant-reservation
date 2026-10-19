@@ -14,6 +14,20 @@ const reservationSchema = new mongoose.Schema(
       required: [true, 'phone is required'],
       trim: true,
     },
+    // The phone with only the digits ("+1 555 123 4567" -> "15551234567").
+    // The guest uses his phone to find "his" reservations, on any device.
+    phoneDigits: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    // Short code given to the guest at creation (example: R-7K2QM),
+    // like a ticket number: he keeps it to find or cancel his request.
+    bookingCode: {
+      type: String,
+      default: null,
+      index: true,
+    },
     email: {
       type: String,
       trim: true,

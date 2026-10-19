@@ -43,10 +43,24 @@ export async function getReservations({ date, search } = {}, token) {
   return handleResponse(res);
 }
 
-// GET /api/reservations/:id - PUBLIC: a guest uses it to follow HIS OWN
-// request (created in this browser) and see when the team accepts/declines.
-export async function getReservation(id) {
-  const res = await fetch(`${BASE}/reservations/${id}`);
+// GET /api/reservations/track?phone=...&code=...  - PUBLIC:
+// a guest finds HIS OWN requests with his phone number (no login),
+// from any device. The booking code is optional.
+export async function trackReservations(phone, code) {
+  const params = new URLSearchParams({ phone });
+  if (code && code.trim()) params.set('code', code.trim());
+  const res = await fetch(`${BASE}/reservations/track?${params.toString()}`);
+  return handleResponse(res);
+}
+
+// PATCH /api/reservations/:id/cancel  - PUBLIC (the guest himself):
+// cancel a PENDING request, the phone must match the reservation.
+export async function guestCancel(id, phone) {
+  const res = await fetch(`${BASE}/reservations/${id}/cancel`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
   return handleResponse(res);
 }
 

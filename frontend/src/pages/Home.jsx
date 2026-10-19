@@ -1,4 +1,4 @@
-// Home.jsx - landing page: choose "guest" or "restaurant team".
+
 export default function Home({ session, onNavigate }) {
   return (
     <section className="hero">

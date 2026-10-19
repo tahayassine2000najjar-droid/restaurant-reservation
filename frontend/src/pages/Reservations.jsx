@@ -1,47 +1,37 @@
 // Reservations.jsx - the GUEST page: the form to ask for a reservation,
-// and BELOW it the requests sent from this browser, so the guest can
-// follow the status (pending / accepted / declined) without any login.
+// and BELOW it the "Track my reservation" box: the guest follows his own
+// requests (pending / accepted / declined) with his phone number, from
+// any device. No account needed.
 import { useState, useCallback } from 'react';
 import ReservationForm from '../components/ReservationForm.jsx';
-import MyReservations from '../components/MyReservations.jsx';
+import TrackReservations from '../components/TrackReservations.jsx';
 import { createReservation } from '../api.js';
 
-// The ids of the reservations created in THIS browser are kept in
-// localStorage, so the list survives a refresh of the page.
-const STORAGE_KEY = 'guestReservationIds';
-
-function loadIds() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveIds(ids) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-}
+// The phone of the last booking is remembered in this browser, so the
+// track box below is already filled (and searched) when the guest comes
+// back or books again.
+const PHONE_KEY = 'lastGuestPhone';
 
 export default function Reservations() {
-  const [ids, setIds] = useState(loadIds); // ids created in this browser
+  const [lastCode, setLastCode] = useState(null); // bookingCode of the last request
+  const [autoPhone, setAutoPhone] = useState(
+    () => localStorage.getItem(PHONE_KEY) || ''
+  );
+  const [autoKey, setAutoKey] = useState(0); // changed -> track box searches again
 
   // A guest can only CREATE a request; the team accepts or declines it later.
   async function handleSave(form) {
-    const created = await createReservation(form); // the new row (status pending)
-    setIds((old) => {
-      const next = [...old, created._id];
-      saveIds(next);
-      return next;
-    });
+    const created = await createReservation(form); // { id, bookingCode, status... }
+    localStorage.setItem(PHONE_KEY, form.phone);
+    setAutoPhone(form.phone);
+    setLastCode(created.bookingCode);
+    setAutoKey((k) => k + 1); // tell the track box to search again
   }
 
-  // The team deleted the reservation on the server -> stop tracking it.
-  const removeId = useCallback((id) => {
-    setIds((old) => {
-      const next = old.filter((x) => x !== id);
-      saveIds(next);
-      return next;
-    });
+  // Nothing to keep: only the phone is remembered (no reservation id).
+  const clearPhone = useCallback(() => {
+    localStorage.removeItem(PHONE_KEY);
+    setAutoPhone('');
   }, []);
 
   return (
@@ -51,10 +41,27 @@ export default function Reservations() {
         Reservations are taken only from <strong>08:00 to 20:00</strong>, every day.
       </p>
 
+      {lastCode && (
+        <div className="alert">
+          Thank you! Your request was sent and is waiting for the team's approval.
+          <br />
+          Your booking code: <strong>{lastCode}</strong> — keep it to find or
+          cancel your request (even from another device).
+        </div>
+      )}
+
       <ReservationForm onSave={handleSave} />
 
-      {/* Below the form: the requests sent from this browser + their status. */}
-      <MyReservations ids={ids} onRemove={removeId} />
+      {/* Below the form: find his requests with phone (+ booking code). */}
+      <TrackReservations autoPhone={autoPhone} autoKey={autoKey} />
+
+      {autoPhone && (
+        <div className="form-actions">
+          <button type="button" className="btn btn-ghost" onClick={clearPhone}>
+            Forget my phone number on this device
+          </button>
+        </div>
+      )}
     </main>
   );
 }

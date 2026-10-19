@@ -40,7 +40,7 @@ restaurant-reservation/
       components/
         Navbar.jsx            # Home / Reservations / Team (team link = login only)
         ReservationForm.jsx   # Guest form (create only)
-        MyReservations.jsx    # Guest list below the form: live status of the requests
+        TrackReservations.jsx # Guest: find his requests by phone + booking code
         ReservationList.jsx   # Table of reservations
         ReservationItem.jsx   # One row with Accept / Decline
       pages/
@@ -69,11 +69,12 @@ React (localhost:5173)  ──fetch──▶  Express API (localhost:4000/api)  
 1. The browser loads the React app from Vite (`http://localhost:5173`).
 2. Every API call is in **one file**: `frontend/src/api.js`, using `fetch`.
 3. A **guest** fills the form → `POST /api/reservations` → the request is
-   saved with the status `pending`. The id is remembered in `localStorage`,
-   and **below the form** the guest sees "My reservations": every request
-   sent from this browser with a live badge (`pending` / `confirmed` /
-   `cancelled`), refreshed every 10 s and on tab focus via the public
-   `GET /api/reservations/:id`.
+   saved with the status `pending` and a **booking code** (example `R-7K2QM`)
+   returned to the guest. **Below the form**, the guest follows his own
+   requests with just his **phone number** (+ the booking code if kept):
+   `GET /api/reservations/track?phone=…` works from **any device**, no
+   account. While a request is `pending` the guest can cancel it himself
+   (`PATCH /api/reservations/:id/cancel`, the phone must match).
 4. The **team** logs in → `POST /api/auth/login` returns a JWT, saved in
    `localStorage`. Every team request then carries
    `Authorization: Bearer <token>`.
@@ -154,8 +155,10 @@ Base URL: `http://localhost:4000/api`
 |--------|----------------------------|---------------|-------------------------------------------------------------|---------|
 | POST   | `/auth/login`              | anyone        | `{ username, password }` → `{ token, username, role }`      | 200     |
 | GET    | `/reservations`            | **team only** | List all, with `?date=YYYY-MM-DD` and/or `?search=name`     | 200     |
+| GET    | `/reservations/track`      | anyone (guest)| `?phone=…` (+ optional `&code=R-7K2QM`) → the guest's own requests | 200 |
 | GET    | `/reservations/:id`        | anyone        | Get one by id                                               | 200     |
-| POST   | `/reservations`            | anyone (guest)| Create a request — status is always `pending`               | 201     |
+| POST   | `/reservations`            | anyone (guest)| Create a request — status `pending` + a booking code        | 201     |
+| PATCH  | `/reservations/:id/cancel` | anyone (guest)| Guest cancels his OWN pending request, `{ "phone": "…" }` must match | 200 |
 | PATCH  | `/reservations/:id/status` | **team only** | Accept `{"status":"confirmed"}` or decline `{"status":"cancelled"}` | 200 |
 | PUT    | `/reservations/:id`        | **team only** | Update a reservation                                        | 200     |
 | DELETE | `/reservations/:id`        | **team only** | Delete a reservation                                        | 200     |
@@ -176,9 +179,17 @@ $login = Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/auth/logi
 $h = @{ Authorization = "Bearer $($login.token)" }
 
 # GUEST: create a request (no token needed, no status in the body)
+# The answer contains his bookingCode (example R-7K2QM)
 Invoke-RestMethod -Method Post -Uri http://localhost:4000/api/reservations `
   -ContentType "application/json" `
   -Body '{"customerName":"Jane Doe","phone":"+1 555 123 4567","email":"jane@example.com","date":"2026-12-01","time":"19:00","guests":4,"notes":"Birthday"}'
+
+# GUEST: track his own requests with his phone, from any device (code optional)
+Invoke-RestMethod -Uri "http://localhost:4000/api/reservations/track?phone=+15551234567"
+
+# GUEST: cancel his own PENDING request (the phone must match)
+Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>/cancel `
+  -ContentType "application/json" -Body '{"phone":"+1 555 123 4567"}'
 
 # TEAM: list, with search + filter combined
 Invoke-RestMethod -Uri "http://localhost:4000/api/reservations?date=2026-12-01&search=jane" -Headers $h
@@ -201,6 +212,8 @@ Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>
 | id            | auto-generated                                     |
 | customerName  | required                                           |
 | phone         | required, 7-15 digits                              |
+| phoneDigits   | auto: the phone with only its digits (used by the track search) |
+| bookingCode   | auto: short code given to the guest, e.g. `R-7K2QM` |
 | email         | optional, valid format if provided                 |
 | date          | required, `YYYY-MM-DD`, not in the past            |
 | time          | required, between **08:00 and 20:00**              |
