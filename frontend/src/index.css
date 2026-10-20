@@ -454,3 +454,67 @@ h2 {
 .date-filter input[type='text'] {
   min-width: 210px;
 }
+
+/* ---------------- Responsive ---------------- */
+
+/* Small tablets & phones: keep nav + track rows from overflowing, let the table scroll cleanly */
+@media (max-width: 768px) {
+  .nav-links {
+    flex-wrap: wrap;
+  }
+
+  .guest-res {
+    flex-wrap: wrap;
+  }
+
+  .table {
+    min-width: 700px;
+  }
+}
+
+/* Phones: title on its own row, filters full width */
+@media (max-width: 560px) {
+  .list-header h2 {
+    flex: 1 0 100%;
+    margin-right: 0;
+  }
+
+  .date-filter {
+    display: block;
+    width: 100%;
+  }
+
+  .date-filter input,
+  .date-filter input[type='text'] {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Small phones: stack the form's date / time / guests row, full-width buttons */
+@media (max-width: 480px) {
+  .app {
+    padding: 18px 14px 48px;
+  }
+
+  .hero {
+    margin: 24px auto;
+    padding: 28px 18px;
+  }
+
+  .hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .form-actions .btn {
+    flex: 1 1 100%;
+  }
+}

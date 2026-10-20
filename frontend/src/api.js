@@ -1,9 +1,5 @@
-// api.js - tiny wrapper around fetch for the two API groups.
-
 const BASE = 'http://localhost:4000/api';
 
-// Every failed response throws an Error that also carries the HTTP status,
-// so a page can react to 401 (session expired) for example.
 async function handleResponse(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -14,9 +10,6 @@ async function handleResponse(res) {
   return data;
 }
 
-// ---- team login ----
-
-// POST /api/auth/login -> { token, username, role }
 export async function login(username, password) {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
@@ -26,9 +19,6 @@ export async function login(username, password) {
   return handleResponse(res);
 }
 
-// ---- reservations ----
-
-// GET /api/reservations?date=YYYY-MM-DD&search=john  (TEAM ONLY, needs the token)
 export async function getReservations({ date, search } = {}, token) {
   const params = new URLSearchParams();
   if (date) params.set('date', date);
@@ -43,9 +33,6 @@ export async function getReservations({ date, search } = {}, token) {
   return handleResponse(res);
 }
 
-// GET /api/reservations/track?phone=...&code=...  - PUBLIC:
-// a guest finds HIS OWN requests with his phone number (no login),
-// from any device. The booking code is optional.
 export async function trackReservations(phone, code) {
   const params = new URLSearchParams({ phone });
   if (code && code.trim()) params.set('code', code.trim());
@@ -53,8 +40,6 @@ export async function trackReservations(phone, code) {
   return handleResponse(res);
 }
 
-// PATCH /api/reservations/:id/cancel  - PUBLIC (the guest himself):
-// cancel a PENDING request, the phone must match the reservation.
 export async function guestCancel(id, phone) {
   const res = await fetch(`${BASE}/reservations/${id}/cancel`, {
     method: 'PATCH',
@@ -64,7 +49,6 @@ export async function guestCancel(id, phone) {
   return handleResponse(res);
 }
 
-// POST /api/reservations - PUBLIC: this is how a guest asks for a table.
 export async function createReservation(payload) {
   const res = await fetch(`${BASE}/reservations`, {
     method: 'POST',
@@ -74,8 +58,6 @@ export async function createReservation(payload) {
   return handleResponse(res);
 }
 
-// PATCH /api/reservations/:id/status  (TEAM ONLY)
-// status is "confirmed" (accept) or "cancelled" (decline).
 export async function setStatus(id, status, token) {
   const res = await fetch(`${BASE}/reservations/${id}/status`, {
     method: 'PATCH',

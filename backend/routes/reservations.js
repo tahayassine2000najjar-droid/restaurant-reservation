@@ -15,8 +15,6 @@ function escapeRegex(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// A short code given to the guest (like a ticket number): R-7K2QM
-// Letters and digits only, no confusing 0/O or 1/I.
 function makeBookingCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -26,14 +24,10 @@ function makeBookingCode() {
   return 'R-' + code;
 }
 
-// The phone with only its digits, so "+1 555 123 4567" and "1555 1234567"
-// are found with the same search.
 function digitsOf(phone) {
   return String(phone).replace(/\D/g, '');
 }
 
-// What a GUEST is allowed to see about a reservation (no phone, no notes:
-// those stay private to the team).
 function guestView(row) {
   return {
     id: row._id,
@@ -62,9 +56,6 @@ router.get('/', requireTeam, async (req, res) => {
   }
 });
 
-// PUBLIC: the guest finds HIS OWN reservations with his phone number
-// (+ the booking code if he has one). Works on any device, no login.
-// GET /api/reservations/track?phone=0612345678&code=R-7K2QM  (code optional)
 router.get('/track', async (req, res) => {
   try {
     const digits = digitsOf(req.query.phone || '');
@@ -113,8 +104,8 @@ router.post('/', async (req, res) => {
     const created = await Reservation.create({
       customerName: data.customerName,
       phone: data.phone,
-      phoneDigits: digitsOf(data.phone),  // so the guest can find it back
-      bookingCode: makeBookingCode(),     // ticket number given to the guest
+      phoneDigits: digitsOf(data.phone),
+      bookingCode: makeBookingCode(),
       email: data.email || null,
       date: data.date,
       time: data.time,
@@ -123,7 +114,6 @@ router.post('/', async (req, res) => {
       status: 'pending', 
     });
 
-    // The guest only gets his own view (with his bookingCode to track it).
     res.status(201).json(guestView(created));
   } catch (err) {
     res.status(500).json({ error: 'Server error: ' + err.message });
@@ -131,9 +121,6 @@ router.post('/', async (req, res) => {
 });
 
 
-// PUBLIC: the guest cancels HIS OWN request while it is still "pending".
-// The phone of the body must match the phone of the reservation.
-// PATCH /api/reservations/:id/cancel  { phone: "0612345678" }
 router.patch('/:id/cancel', async (req, res) => {
   try {
     const row = await Reservation.findById(req.params.id);
@@ -199,7 +186,7 @@ router.put('/:id', requireTeam, async (req, res) => {
 
     existing.customerName = data.customerName;
     existing.phone = data.phone;
-    existing.phoneDigits = digitsOf(data.phone); // keep the guest tracking working
+    existing.phoneDigits = digitsOf(data.phone);
     existing.email = data.email || null;
     existing.date = data.date;
     existing.time = data.time;

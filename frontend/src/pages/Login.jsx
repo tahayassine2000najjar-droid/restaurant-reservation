@@ -1,4 +1,3 @@
-// Login.jsx - sign in page for the restaurant team (admin or reception).
 import { useState } from 'react';
 import { login } from '../api.js';
 
@@ -18,7 +17,7 @@ export default function Login({ onLogin }) {
     setBusy(true);
     setError('');
     try {
-      const session = await login(username.trim(), password); // { token, username, role }
+      const session = await login(username.trim(), password);
       onLogin(session);
     } catch (err) {
       setError(err.message);

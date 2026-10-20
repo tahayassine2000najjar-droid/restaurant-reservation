@@ -6,7 +6,7 @@ A simple, full-stack restaurant reservation manager with two sides:
 - **Restaurant team** (admin / reception) — logs in with **JWT** to search,
   filter, accept or decline reservations.
 
-Beginner-friendly JavaScript, short comments, no extra frameworks.
+Beginner-friendly JavaScript, no extra frameworks.
 
 - **Frontend:** React (Vite) + plain CSS
 - **Backend:** Node.js + Express (REST API) + JWT auth

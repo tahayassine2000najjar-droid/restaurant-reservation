@@ -1,11 +1,6 @@
-// TrackReservations.jsx - GUEST side, below the form: find his own
-// reservations with his phone number (+ the booking code if he kept it).
-// Works on ANY device, no account needed. A pending request can be
-// cancelled directly from here.
 import { useState, useEffect, useRef } from 'react';
 import { trackReservations, guestCancel } from '../api.js';
 
-// Human-friendly labels for the three statuses.
 const LABELS = {
   pending: 'Pending — waiting for the team',
   confirmed: 'Accepted ✔',
@@ -15,11 +10,11 @@ const LABELS = {
 export default function TrackReservations({ autoPhone, autoKey }) {
   const [phone, setPhone] = useState(autoPhone || '');
   const [code, setCode] = useState('');
-  const [rows, setRows] = useState([]); // what the API answered
-  const [searched, setSearched] = useState(false); // true after the 1st search
+  const [rows, setRows] = useState([]);
+  const [searched, setSearched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const alive = useRef(true); // false once the component is unmounted
+  const alive = useRef(true);
 
   useEffect(() => {
     alive.current = true;
@@ -28,7 +23,6 @@ export default function TrackReservations({ autoPhone, autoKey }) {
     };
   }, []);
 
-  // Ask the API for the reservations of this phone (+ optional code).
   async function search(targetPhone, targetCode) {
     if (!targetPhone.trim()) {
       setError('Enter the phone number you used for the booking');
@@ -49,13 +43,11 @@ export default function TrackReservations({ autoPhone, autoKey }) {
     }
   }
 
-  // After a new booking: search again right away with the phone just used,
-  // so the new request appears below the form with its status.
   const firstRun = useRef(true);
   useEffect(() => {
     if (firstRun.current) {
       firstRun.current = false;
-      if (!autoPhone) return; // first visit: empty box, nothing to search
+      if (!autoPhone) return;
     }
     if (!autoPhone) return;
     setPhone(autoPhone);
@@ -64,7 +56,6 @@ export default function TrackReservations({ autoPhone, autoKey }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoKey]);
 
-  // The guest cancels one of HIS pending requests (phone already matched).
   async function cancel(row) {
     const ok = window.confirm(
       `Cancel the reservation ${row.bookingCode} (${row.date} at ${row.time})?`
@@ -74,7 +65,7 @@ export default function TrackReservations({ autoPhone, autoKey }) {
     setError('');
     try {
       await guestCancel(row.id, phone);
-      await search(phone, code); // refresh so the badge updates
+      await search(phone, code);
     } catch (err) {
       setError(err.message);
     } finally {

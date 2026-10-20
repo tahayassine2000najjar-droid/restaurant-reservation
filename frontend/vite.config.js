@@ -1,4 +1,3 @@
-// vite.config.js - Vite configuration for the React app.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 

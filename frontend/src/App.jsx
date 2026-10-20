@@ -1,4 +1,3 @@
-// App.jsx - holds the current page + the team session, renders the right page.
 import { useState } from 'react';
 import Navbar from './components/Navbar.jsx';
 import Home from './pages/Home.jsx';
@@ -8,9 +7,7 @@ import Team from './pages/Team.jsx';
 import { loadSession, saveSession, clearSession } from './auth.js';
 
 export default function App() {
-  // Which page: 'home', 'reservations' (guest form), 'login' or 'team'.
   const [page, setPage] = useState('home');
-  // The team session ({ token, username, role }) or null when logged out.
   const [session, setSession] = useState(loadSession);
 
   function handleLogin(data) {
@@ -25,10 +22,7 @@ export default function App() {
     setPage('home');
   }
 
-  // The team page is private: without a session we show the login instead.
   function renderPage() {
-    // An admin doesn't ask for a table: on the Reservations page he only
-    // gets the list (search, filter, accept/decline) — no guest form.
     if (page === 'reservations') {
       if (session && session.role === 'admin') {
         return <Team session={session} onLogout={handleLogout} />;

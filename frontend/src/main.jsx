@@ -1,4 +1,3 @@
-// main.jsx - mounts the React app into the page.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';

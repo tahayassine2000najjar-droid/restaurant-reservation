@@ -25,7 +25,6 @@ const reservationSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'date is required (YYYY-MM-DD)')
     .refine((v) => {
-      // Cannot be in the past.
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const chosen = new Date(v + 'T00:00:00');

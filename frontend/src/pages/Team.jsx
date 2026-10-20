@@ -1,6 +1,3 @@
-// Team.jsx - PRIVATE page for the restaurant team:
-// the list of reservations, a search by name, a filter by date,
-// and the Accept / Decline buttons.
 import { useState, useEffect, useCallback } from 'react';
 import ReservationList from '../components/ReservationList.jsx';
 import { getReservations, setStatus } from '../api.js';
@@ -9,17 +6,15 @@ export default function Team({ session, onLogout }) {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [dateFilter, setDateFilter] = useState(''); // filter by date
-  const [search, setSearch] = useState(''); // search by customer name
-  const [query, setQuery] = useState(''); // what we actually send (debounced)
+  const [dateFilter, setDateFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
 
-  // Wait 400 ms after the last keystroke before searching.
   useEffect(() => {
     const t = setTimeout(() => setQuery(search.trim()), 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  // Fetch the list from the API whenever the filter/search changes.
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -28,11 +23,10 @@ export default function Team({ session, onLogout }) {
         { date: dateFilter || undefined, search: query || undefined },
         session.token
       );
-      // Mongo uses _id; give every row an `id` so React keys are simple.
       setReservations(rows.map((r) => ({ ...r, id: r._id })));
     } catch (err) {
       if (err.status === 401) {
-        onLogout(); // token expired -> back to the login page
+        onLogout();
         return;
       }
       setError(err.message);
@@ -45,12 +39,11 @@ export default function Team({ session, onLogout }) {
     load();
   }, [load]);
 
-  // Accept ("confirmed") or decline ("cancelled") a reservation.
   async function changeStatus(row, status) {
     setError('');
     try {
       await setStatus(row.id, status, session.token);
-      await load(); // refresh so the badge updates
+      await load();
     } catch (err) {
       if (err.status === 401) {
         onLogout();
