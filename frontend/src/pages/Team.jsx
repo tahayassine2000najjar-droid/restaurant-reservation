@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import ReservationList from '../components/ReservationList.jsx';
-import { getReservations, setStatus } from '../api.js';
+import { getReservations, setStatus, deleteReservation } from '../api.js';
 
 export default function Team({ session, onLogout }) {
   const [reservations, setReservations] = useState([]);
@@ -53,6 +53,22 @@ export default function Team({ session, onLogout }) {
     }
   }
 
+  async function remove(row) {
+    setError('');
+    try {
+      await deleteReservation(row.id, session.token);
+      await load();
+      return true;
+    } catch (err) {
+      if (err.status === 401) {
+        onLogout();
+        return false;
+      }
+      setError(err.message);
+      return false;
+    }
+  }
+
   return (
     <main>
       <section className="panel">
@@ -63,12 +79,11 @@ export default function Team({ session, onLogout }) {
             Search by name
             <input
               type="text"
-              placeholder="Jane Doe…"
+              placeholder="Taha Najjar"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </label>
-
           <label className="date-filter">
             Filter by date
             <input
@@ -99,6 +114,7 @@ export default function Team({ session, onLogout }) {
           loading={loading}
           onAccept={(row) => changeStatus(row, 'confirmed')}
           onDecline={(row) => changeStatus(row, 'cancelled')}
+          onDelete={remove}
         />
       </section>
     </main>

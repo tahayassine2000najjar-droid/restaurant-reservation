@@ -29,7 +29,7 @@ export default function Login({ onLogin }) {
   return (
     <main className="layout-single">
       <h2>Restaurant team login</h2>
-      <p className="muted">Admin and reception only.</p>
+      <p className="muted">Reception team only.</p>
 
       <form className="card form" onSubmit={handleSubmit}>
         {error && <div className="alert alert-error">{error}</div>}

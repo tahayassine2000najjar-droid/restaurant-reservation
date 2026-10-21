@@ -7,8 +7,8 @@ const LABELS = {
   cancelled: 'Declined ✘',
 };
 
-export default function TrackReservations({ autoPhone, autoKey }) {
-  const [phone, setPhone] = useState(autoPhone || '');
+export default function TrackReservations() {
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [rows, setRows] = useState([]);
   const [searched, setSearched] = useState(false);
@@ -24,14 +24,16 @@ export default function TrackReservations({ autoPhone, autoKey }) {
   }, []);
 
   async function search(targetPhone, targetCode) {
-    if (!targetPhone.trim()) {
-      setError('Enter the phone number you used for the booking');
+    const p = targetPhone.trim();
+    const c = targetCode.trim();
+    if (!p || !c) {
+      setError('Enter both your phone number and your booking code');
       return;
     }
     setBusy(true);
     setError('');
     try {
-      const found = await trackReservations(targetPhone, targetCode);
+      const found = await trackReservations(p, c);
       if (!alive.current) return;
       setRows(found);
       setSearched(true);
@@ -42,19 +44,6 @@ export default function TrackReservations({ autoPhone, autoKey }) {
       if (alive.current) setBusy(false);
     }
   }
-
-  const firstRun = useRef(true);
-  useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-      if (!autoPhone) return;
-    }
-    if (!autoPhone) return;
-    setPhone(autoPhone);
-    setCode('');
-    search(autoPhone, '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoKey]);
 
   async function cancel(row) {
     const ok = window.confirm(
@@ -77,8 +66,8 @@ export default function TrackReservations({ autoPhone, autoKey }) {
     <section className="card my-reservations">
       <h2>Track my reservation</h2>
       <p className="muted">
-        Enter the phone number used when booking (and the booking code if you
-        kept it) — no account needed, it works on any device.
+        Enter the phone number and the booking code you received when booking —
+        no account needed, it works on any device.
       </p>
 
       <form
@@ -100,7 +89,7 @@ export default function TrackReservations({ autoPhone, autoKey }) {
         </label>
 
         <label>
-          Booking code (optional)
+          Booking code
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
@@ -116,7 +105,9 @@ export default function TrackReservations({ autoPhone, autoKey }) {
       </form>
 
       {searched && !busy && rows.length === 0 && (
-        <div className="alert">No reservation found for this phone number.</div>
+        <div className="alert">
+          No reservation found for this phone number and booking code.
+        </div>
       )}
 
       <ul className="guest-list">

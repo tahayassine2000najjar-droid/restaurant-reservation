@@ -3,8 +3,9 @@
 A simple, full-stack restaurant reservation manager with two sides:
 
 - **Guest** — sends a reservation request with a form (no login needed).
-- **Restaurant team** (admin / reception) — logs in with **JWT** to search,
-  filter, accept or decline reservations.
+- **Restaurant team** (one "reception team" role) — logs in with **JWT** to search,
+  filter, accept, decline or **delete** reservations. Once logged in, it only
+  ever sees the reservations dashboard (Home and the guest form are hidden).
 
 Beginner-friendly JavaScript, no extra frameworks.
 
@@ -38,20 +39,22 @@ restaurant-reservation/
     vite.config.js
     src/
       components/
-        Navbar.jsx            # Home / Reservations / Team (team link = login only)
+        Navbar.jsx            # Logged out: Home / Reservations / Team login
+                              # Logged in: Reservations + username + Logout ONLY
         ReservationForm.jsx   # Guest form (create only)
         TrackReservations.jsx # Guest: find his requests by phone + booking code
         ReservationList.jsx   # Table of reservations
-        ReservationItem.jsx   # One row with Accept / Decline
+        ReservationItem.jsx   # One row: Accept / Decline / Delete (inline Yes-No confirm)
       pages/
-        Home.jsx              # Entry screen: guest or restaurant team
+        Home.jsx              # Entry screen: guest or restaurant team (logged out only)
         Reservations.jsx      # GUEST page: the form + the requests sent from this browser
         Login.jsx             # TEAM page: login form
-        Team.jsx              # TEAM page: list, search, filter, accept/decline
+        Team.jsx              # TEAM page: list, search, filter, accept/decline/delete
       api.js                  # ALL API calls live here (fetch)
       auth.js                 # Saves the team session in localStorage
       App.jsx                 # Holds the page + session, renders the right page
-                              # (admin on "Reservations" = list only, no guest form)
+                              # (session exists => the Team dashboard for EVERY route,
+                              #  so the reception login never reaches Home or the guest form)
       main.jsx                # React entry point
       index.css               # All styles
     package.json
@@ -77,10 +80,14 @@ React (localhost:5173)  ──fetch──▶  Express API (localhost:4000/api)  
    (`PATCH /api/reservations/:id/cancel`, the phone must match).
 4. The **team** logs in → `POST /api/auth/login` returns a JWT, saved in
    `localStorage`. Every team request then carries
-   `Authorization: Bearer <token>`.
+   `Authorization: Bearer <token>`. From that moment the navbar only shows
+   **Reservations** + **Logout**, and `App.jsx` renders the dashboard for every
+   route: Home and the guest booking form are unreachable until logout.
 5. The team page calls `GET /api/reservations?search=…&date=…` for the list,
-   and `PATCH /api/reservations/:id/status` to accept (`confirmed`) or
-   decline (`cancelled`).
+   `PATCH /api/reservations/:id/status` to accept (`confirmed`) or
+   decline (`cancelled`), and `DELETE /api/reservations/:id` to remove a row
+   for good (the **Delete** button on every row → inline *Yes, delete / No*
+   confirmation in the row, no popup).
 6. Express checks the token first (middleware), then uses **Mongoose** to
    read/write MongoDB and **Zod** to validate input.
 
@@ -107,12 +114,21 @@ npm start                 # runs on http://localhost:4000
 
 On the **first start**, the server creates the two team accounts:
 
-| Username    | Password        | Role  |
-|-------------|-----------------|-------|
-| `admin`     | `admin123`      | admin |
-| `reception` | `reception123`  | reception |
+| Username    | Password        | Role           |
+|-------------|-----------------|----------------|
+| `admin`     | `admin123`      | reception team |
+| `reception` | `reception123`  | reception team |
 
 They live in the `users` collection — change or delete them whenever you want.
+Both accounts share the single **reception team** role: it manages the
+requests (search, filter, accept, decline, delete). The username `admin` is
+just a login name, not a separate role.
+
+**What the reception login can reach:** the reservations dashboard, and only
+that. Home and the guest booking form are for logged-out visitors — the navbar
+stops showing them after login and `App.jsx` renders the dashboard whatever
+route is asked for. All team routes (list, status, update, **delete**) are
+protected by `requireTeam`: no valid JWT → `401`.
 
 ### 2. Frontend (in a second terminal)
 ```powershell
@@ -201,6 +217,9 @@ Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>
 # TEAM: decline
 Invoke-RestMethod -Method Patch -Uri http://localhost:4000/api/reservations/<id>/status `
   -Headers $h -ContentType "application/json" -Body '{"status":"cancelled"}'
+
+# TEAM: delete a row permanently (what the Delete button does - ask twice: Yes, delete / No)
+Invoke-RestMethod -Method Delete -Uri http://localhost:4000/api/reservations/<id> -Headers $h
 ```
 
 ---

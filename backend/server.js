@@ -27,7 +27,7 @@ async function seedTeam() {
   if (count > 0) return;
 
   await User.create([
-    { username: 'admin', password: 'admin123', role: 'admin' },
+    { username: 'admin', password: 'admin123', role: 'reception' },
     { username: 'reception', password: 'reception123', role: 'reception' },
   ]);
   console.log('Team accounts created -> admin / admin123 and reception / reception123');

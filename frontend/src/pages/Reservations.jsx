@@ -3,21 +3,12 @@ import ReservationForm from '../components/ReservationForm.jsx';
 import TrackReservations from '../components/TrackReservations.jsx';
 import { createReservation } from '../api.js';
 
-const PHONE_KEY = 'lastGuestPhone';
-
 export default function Reservations() {
   const [lastCode, setLastCode] = useState(null);
-  const [autoPhone, setAutoPhone] = useState(
-    () => localStorage.getItem(PHONE_KEY) || ''
-  );
-  const [autoKey, setAutoKey] = useState(0);
 
   async function handleSave(form) {
     const created = await createReservation(form);
-    localStorage.setItem(PHONE_KEY, form.phone);
-    setAutoPhone(form.phone);
     setLastCode(created.bookingCode);
-    setAutoKey((k) => k + 1);
   }
 
   return (
@@ -28,16 +19,18 @@ export default function Reservations() {
 
       {lastCode && (
         <div className="alert">
-          Thank you! Your request was sent and is waiting for the team's approval.
+          ✔ Your reservation was created successfully! It is now waiting for
+          the team's approval.
           <br />
-          Your booking code: <strong>{lastCode}</strong> — keep it to find or
-          cancel your request (even from another device).
+          Your booking code: <strong>{lastCode}</strong> — keep it together with
+          your phone number to track, find, or cancel your request (even from
+          another device).
         </div>
       )}
 
       <ReservationForm onSave={handleSave} />
 
-      <TrackReservations autoPhone={autoPhone} autoKey={autoKey} />
+      <TrackReservations />
     </main>
   );
 }
