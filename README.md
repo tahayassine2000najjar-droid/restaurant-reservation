@@ -1,5 +1,7 @@
 # 🍽️ Restaurant Reservation App
 
+diagram de class = ![alt text](image.png)
+
 A simple, full-stack restaurant reservation manager with two sides:
 
 - **Guest** — sends a reservation request with a form (no login needed).
