@@ -69,3 +69,11 @@ export async function setStatus(id, status, token) {
   });
   return handleResponse(res);
 }
+
+export async function deleteReservation(id, token) {
+  const res = await fetch(`${BASE}/reservations/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+}

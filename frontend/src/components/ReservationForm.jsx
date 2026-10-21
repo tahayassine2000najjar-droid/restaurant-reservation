@@ -71,7 +71,7 @@ export default function ReservationForm({ onSave }) {
           name="customerName"
           value={form.customerName}
           onChange={handleChange}
-          placeholder="Jane Doe"
+          placeholder="Taha Najjar"
         />
       </label>
 
@@ -81,7 +81,7 @@ export default function ReservationForm({ onSave }) {
           name="phone"
           value={form.phone}
           onChange={handleChange}
-          placeholder="+1 555 123 4567"
+          placeholder="+212 0684211954"
         />
       </label>
 
@@ -91,7 +91,7 @@ export default function ReservationForm({ onSave }) {
           name="email"
           value={form.email}
           onChange={handleChange}
-          placeholder="jane@example.com"
+          placeholder="tahayassine2000najjar.com"
         />
       </label>
 

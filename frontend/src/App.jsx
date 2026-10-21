@@ -23,16 +23,17 @@ export default function App() {
   }
 
   function renderPage() {
+    // Signed-in reception staff only ever reach the reservations dashboard.
+    if (session) {
+      return <Team session={session} onLogout={handleLogout} />;
+    }
+
     if (page === 'reservations') {
-      if (session && session.role === 'admin') {
-        return <Team session={session} onLogout={handleLogout} />;
-      }
       return <Reservations />;
     }
 
     if (page === 'team' || page === 'login') {
-      if (!session) return <Login onLogin={handleLogin} />;
-      return <Team session={session} onLogout={handleLogout} />;
+      return <Login onLogin={handleLogin} />;
     }
 
     return <Home session={session} onNavigate={setPage} />;

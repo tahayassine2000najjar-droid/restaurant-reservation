@@ -1,7 +1,7 @@
 
 import ReservationItem from './ReservationItem.jsx';
 
-export default function ReservationList({ items, loading, onAccept, onDecline }) {
+export default function ReservationList({ items, loading, onAccept, onDecline, onDelete }) {
   if (loading) return <div className="alert">Loading reservations…</div>;
 
   if (items.length === 0)
@@ -29,6 +29,7 @@ export default function ReservationList({ items, loading, onAccept, onDecline })
               item={item}
               onAccept={onAccept}
               onDecline={onDecline}
+              onDelete={onDelete}
             />
           ))}
         </tbody>
